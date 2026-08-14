@@ -53,11 +53,38 @@ Navigate to `http://localhost:3000` in your web browser.
 - **Assumption:** Passcodes are required to prevent unauthorized users from joining.
 - **Implementation:** When a user schedules or instantly creates a meeting, a 6-character secure passcode is generated. The creator is recognized as the "Host" via their session cookie and bypasses the passcode check. Guests who attempt to join via a link or Meeting ID are halted at a waiting screen and forced to provide the passcode.
 
+## How to Use the Application
+
+### 1. Initial Access
+- Upon visiting the application, you will be prompted to enter a **Display Name**. This seamlessly logs you in without requiring a password.
+- You will then be redirected to the **Zoom Dashboard**.
+
+### 2. Creating an Instant Meeting
+- Click the large orange **"New Meeting"** button on the dashboard.
+- A secure Meeting ID and Passcode will be instantly generated.
+- You will bypass the waiting room (as you are the Host) and join the WebRTC call immediately.
+- To invite others, click the **"i" (Info) icon** in the top left corner of the meeting and copy the Invite Link.
+
+### 3. Joining a Meeting (as a Guest)
+- **Via Link:** Simply click an invite link (e.g. `/launch?meetingId=123&pwd=abc`). You will be prompted for your name and automatically joined.
+- **Via Dashboard:** Click the blue **"Join"** button on the dashboard, enter the Meeting ID provided by the host, and if the meeting requires a passcode, you will be securely prompted for it.
+
+### 4. Scheduling a Meeting
+- Click the **"Schedule"** button on the dashboard.
+- Fill out the Topic, Date, and Time.
+- Click **Save**. The meeting will now appear dynamically in your **Upcoming Meetings** list on the right side of the dashboard.
+
+### 5. Host Controls & Session Management
+- **End Meeting for All:** As a host, click **"End"** in the bottom right corner of the meeting, then select **"End Meeting for All"**. This terminates the WebSocket and kicks all participants back to the home page.
+- **Reclaiming Host:** If you accidentally close your tab or leave the meeting, the system will temporarily assign a random guest as the host. When you (the original creator) rejoin the meeting, a blue **"Reclaim Host"** button will appear at the top of your screen to take back your privileges.
+- **Return to Meeting:** If you navigate back to the dashboard while you are still active in a meeting, a **"Meeting in Progress"** banner will appear on your dashboard, allowing you to seamlessly auto-rejoin.
+
 ## Features Implemented
 - ✅ **Landing Dashboard:** Exact replica of Zoom's modern UI, featuring quick actions, upcoming meetings, and a responsive sidebar.
 - ✅ **Instant Meeting Creation:** Instantly spins up a unique meeting ID, bypasses passcode requirements for the host, and drops them directly into a waiting room/meeting.
-- ✅ **Join Meeting:** Guests can join via a shareable invite link (`/launch?meetingId=...&pwd=...`) or by manually typing the ID and passcode into the dashboard.
+- ✅ **Join Meeting:** Guests can join via a shareable invite link or by manually typing the ID and passcode into the dashboard.
 - ✅ **Schedule Meetings:** Fully functional scheduling form that generates a meeting, saves it to SQLite, and renders it dynamically on the Upcoming Meetings dashboard.
 - ✅ **Video / Audio Controls:** WebRTC streams with functioning Mute Audio / Stop Video controls.
 - ✅ **Real-Time Chat:** Integrated WebSocket chat system allowing participants to send messages to the room in real-time.
 - ✅ **Cross-Origin Deployment:** Configured CORS and SameSite=none cookies to allow the Next.js frontend (Vercel) to securely communicate with the FastAPI backend (Render) across different domains.
+- ✅ **Mobile Responsiveness:** Custom `100dvh` flex layouts and absolute positioning allow the application to perfectly mimic the native Zoom mobile app experience on Safari and Chrome mobile browsers.
