@@ -646,6 +646,24 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
                         if target_id in room.attendees:
                             await manager.send_personal(meeting_id, target_id, {"event": "KICKED"})
 
+            elif event_type == "ASSIGN_HOST":
+                target_id = message.get("target_id")
+                async with room_lock:
+                    room = active_sessions.get(meeting_id)
+                    if room and room.attendees.get(attendee_id, {}).is_host:
+                        if target_id in room.attendees:
+                            # Remove host status from current user
+                            room.attendees[attendee_id].is_host = False
+                            # Add host status to target
+                            room.attendees[target_id].is_host = True
+                            room.host_id = room.attendees[target_id].user_id
+                
+                await manager.broadcast(meeting_id, {
+                    "event": "STATE_SYNC",
+                    "original_host_id": room.original_host_id if room else None,
+                    "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
+                })
+
     except WebSocketDisconnect:
         await manager.disconnect(meeting_id, attendee_id)
         async with room_lock:

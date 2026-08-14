@@ -271,38 +271,66 @@ export default function Popovers() {
       )}
 
       {/* Assign Host Popover */}
-      {activePopover === 'assign-host' && (
-        <div className="absolute bottom-20 right-4 w-[280px] bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-700 z-50 p-4">
-          <h3 className="text-white font-bold text-lg mb-4">Assign a New Host</h3>
-          
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-md bg-[#e67c22] flex items-center justify-center text-white font-medium text-sm">
-              NR
+      {activePopover === 'assign-host' && (() => {
+        const otherParticipants = useMeetingStore.getState().participants.filter(p => !p.isMe);
+        
+        return (
+          <div className="absolute bottom-20 right-4 w-[280px] bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-700 z-50 p-4">
+            <h3 className="text-white font-bold text-lg mb-4">Assign a New Host</h3>
+            
+            <div className="max-h-48 overflow-y-auto custom-scrollbar mb-4">
+              {otherParticipants.length === 0 ? (
+                <div className="text-gray-400 text-sm text-center py-4">No other participants to assign</div>
+              ) : (
+                <div className="space-y-2">
+                  {otherParticipants.map(p => (
+                    <label key={p.id} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors">
+                      <input 
+                        type="radio" 
+                        name="new_host" 
+                        className="rounded-full bg-black border-gray-600 text-blue-500"
+                        defaultChecked={otherParticipants.length === 1}
+                        onChange={() => useMeetingStore.setState({ selectedHostId: p.id } as any)}
+                      />
+                      <div className={cn("w-8 h-8 rounded-md flex items-center justify-center text-white font-medium text-sm flex-shrink-0", p.color)}>
+                        {p.initial}
+                      </div>
+                      <span className="text-gray-200 text-sm truncate">{p.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
-            <span className="text-gray-200 text-sm">namith raj(Guest)</span>
-          </div>
 
-          <button 
-            onClick={handleLeave}
-            className="w-full bg-[#8b2323] hover:bg-[#7a1e1e] text-gray-300 hover:text-white font-medium py-3 rounded-lg mb-4 transition-colors"
-          >
-            Assign and Leave
-          </button>
-          
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
-              <input type="checkbox" className="rounded bg-black border-gray-600 text-blue-500" />
-              Give feedback
-            </label>
             <button 
-              onClick={() => setActivePopover('end')}
-              className="text-gray-300 hover:text-white text-sm font-medium"
+              onClick={() => {
+                const selected = (useMeetingStore.getState() as any).selectedHostId || (otherParticipants.length === 1 ? otherParticipants[0].id : null);
+                if (selected) {
+                  useMeetingStore.getState().sendWebSocketEvent({ event: 'ASSIGN_HOST', target_id: selected });
+                }
+                handleLeave();
+              }}
+              disabled={otherParticipants.length > 0 && !(useMeetingStore.getState() as any).selectedHostId && otherParticipants.length !== 1}
+              className="w-full bg-[#8b2323] hover:bg-[#7a1e1e] disabled:opacity-50 disabled:cursor-not-allowed text-gray-300 hover:text-white font-medium py-3 rounded-lg mb-4 transition-colors"
             >
-              Cancel
+              Assign and Leave
             </button>
+            
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                <input type="checkbox" className="rounded bg-black border-gray-600 text-blue-500" />
+                Give feedback
+              </label>
+              <button 
+                onClick={() => setActivePopover('end')}
+                className="text-gray-300 hover:text-white text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Leave Popover (Participant) */}
       {activePopover === 'leave' && (
