@@ -63,7 +63,7 @@ export default function BottomControlBar() {
   const displayedVol = !localStream || isMuted ? 0 : vol;
 
   return (
-    <div className="h-16 bg-[#1a1a1a] border-t border-gray-800 flex items-center justify-between px-4 w-full z-40 flex-shrink-0">
+    <div className="h-16 bg-[#1a1a1a] border-t border-gray-800 flex items-center justify-between px-2 sm:px-4 w-full z-40 flex-shrink-0 overflow-x-auto hide-scrollbar gap-2 sm:gap-4">
       
       {/* Left controls */}
       <div className="flex items-center gap-1">

@@ -119,11 +119,11 @@ export default function VideoGrid() {
   };
 
   if (viewMode === 'gallery') {
-    // Determine grid columns based on participant count
-    let gridClass = "grid-cols-2";
-    if (participants.length > 4) gridClass = "grid-cols-3";
-    if (participants.length > 9) gridClass = "grid-cols-4";
-    if (participants.length > 16) gridClass = "grid-cols-5";
+    // Determine grid columns based on participant count, responsive on mobile
+    let gridClass = "grid-cols-1 sm:grid-cols-2";
+    if (participants.length > 4) gridClass = "grid-cols-2 sm:grid-cols-3 md:grid-cols-4";
+    if (participants.length > 9) gridClass = "grid-cols-2 sm:grid-cols-4 md:grid-cols-5";
+    if (participants.length > 16) gridClass = "grid-cols-3 sm:grid-cols-5 md:grid-cols-6";
 
     return (
       <div className="flex-1 w-full p-4 overflow-y-auto custom-scrollbar" onClick={handleGridClick}>

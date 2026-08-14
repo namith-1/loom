@@ -35,7 +35,7 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="w-[320px] bg-[#242424] border-l border-gray-800 flex flex-col h-full flex-shrink-0 z-30 shadow-xl">
+    <div className="w-full md:w-[320px] absolute md:relative top-0 right-0 bg-[#242424] border-l border-gray-800 flex flex-col h-full flex-shrink-0 z-30 shadow-xl">
       {/* Header */}
       <div className="h-12 flex items-center justify-between px-4 border-b border-gray-800 flex-shrink-0">
         <span className="text-gray-200 font-medium text-sm">Meeting Chat</span>
