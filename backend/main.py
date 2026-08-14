@@ -102,14 +102,24 @@ def get_session_data(session_id: str) -> Optional[SessionData]:
             return session_data
     return None
 
+import os
+
+app = FastAPI()
+
+# Add FRONTEND_URL from environment variables if it exists
+frontend_url = os.getenv("FRONTEND_URL")
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+if frontend_url:
+    origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
