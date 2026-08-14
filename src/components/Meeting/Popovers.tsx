@@ -11,6 +11,7 @@ export default function Popovers() {
   const searchParams = useSearchParams();
   const { activePopover, setActivePopover, meetingTitle, viewMode, setViewMode } = useMeetingStore();
   const [floatingEmojis, setFloatingEmojis] = useState<{id: number, emoji: string}[]>([]);
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
   const emojiIdRef = React.useRef(0);
 
   const meetingId = searchParams.get('meetingId') || '';
@@ -20,6 +21,12 @@ export default function Popovers() {
   const inviteLink = `${protocol}//${hostName}/launch?meetingId=${meetingId}&pwd=${pwd}`;
 
   if (!activePopover) return null;
+
+  const handleCopy = (text: string, message: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMessage(message);
+    setTimeout(() => setCopiedMessage(null), 2000);
+  };
 
   const handleReact = (emoji: string) => {
     // Also broadcast reaction
@@ -372,9 +379,9 @@ export default function Popovers() {
             </div>
 
             <div className="p-4 border-t border-gray-800 flex items-center justify-between bg-[#242424] rounded-b-xl">
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 relative">
                 <button 
-                  onClick={handleCopyInvite}
+                  onClick={() => handleCopy(inviteLink, 'URL Copied')}
                   className="text-blue-500 hover:text-blue-400 text-sm font-medium"
                 >
                   Copy URL
@@ -382,12 +389,18 @@ export default function Popovers() {
                 <button 
                   onClick={() => {
                     const text = `You are invited to a Zoom meeting.\n\nMeeting ID: ${meetingId}\n${pwd ? `Passcode: ${pwd}\n` : ''}\nJoin link: ${inviteLink}`;
-                    navigator.clipboard.writeText(text);
+                    handleCopy(text, 'Invitation Copied');
                   }}
                   className="text-blue-500 hover:text-blue-400 text-sm font-medium"
                 >
                   Copy Invitation
                 </button>
+                
+                {copiedMessage && (
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs py-1.5 px-3 rounded shadow-lg whitespace-nowrap animate-in fade-in zoom-in duration-200">
+                    {copiedMessage}
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center gap-4">
