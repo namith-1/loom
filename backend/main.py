@@ -248,6 +248,7 @@ class JoinMeetingRequest(BaseModel):
     meeting_id: str
     passcode: Optional[str] = None
     name: Optional[str] = None
+    user_id: Optional[str] = None
 
 @app.post("/api/meetings/join")
 async def join_meeting(data: JoinMeetingRequest, response: Response, request: Request, background_tasks: BackgroundTasks):
@@ -287,14 +288,22 @@ async def join_meeting(data: JoinMeetingRequest, response: Response, request: Re
             if not data.name:
                 raise HTTPException(status_code=400, detail="Name is required for guest join")
             
-            with get_db() as db:
-                row = db.execute("SELECT user_id FROM users WHERE name = ?", (data.name,)).fetchone()
-                if row:
-                    user_id = row['user_id']
-                else:
-                    user_id = f"user-id-{str(uuid.uuid4())[:8]}"
-                    db.execute("INSERT INTO users (user_id, name) VALUES (?, ?)", (user_id, data.name))
-                    db.commit()
+            user_id = data.user_id
+            if not user_id:
+                with get_db() as db:
+                    row = db.execute("SELECT user_id FROM users WHERE name = ?", (data.name,)).fetchone()
+                    if row:
+                        user_id = row['user_id']
+                    else:
+                        user_id = f"user-id-{str(uuid.uuid4())[:8]}"
+                        db.execute("INSERT INTO users (user_id, name) VALUES (?, ?)", (user_id, data.name))
+                        db.commit()
+            else:
+                with get_db() as db:
+                    row = db.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,)).fetchone()
+                    if not row:
+                        db.execute("INSERT INTO users (user_id, name) VALUES (?, ?)", (user_id, data.name))
+                        db.commit()
 
             session_id = str(uuid.uuid4())
             session_data = SessionData(

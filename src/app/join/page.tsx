@@ -24,7 +24,7 @@ export default function JoinPage() {
     setIsValidating(true);
     try {
       const { joinMeeting } = await import('@/lib/api');
-      const data = await joinMeeting(trimmedMeetingId, passcode.trim(), trimmedName);
+      const data = await joinMeeting(trimmedMeetingId, passcode.trim(), trimmedName, user.userId);
       setSession(data.name, data.user_id);
 
       const query = new URLSearchParams({

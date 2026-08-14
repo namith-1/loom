@@ -40,14 +40,15 @@ export async function validateJoin(meetingId: string): Promise<MeetingValidation
   return res.json();
 }
 
-export async function joinMeeting(meetingId: string, passcode: string, name: string): Promise<JoinMeetingResponse> {
+export async function joinMeeting(meetingId: string, passcode: string, name: string, userId?: string): Promise<JoinMeetingResponse> {
   const res = await fetch(`${getApiUrl()}/meetings/join`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       meeting_id: meetingId,
       passcode: passcode || null,
-      name: name.trim() || null
+      name: name.trim() || null,
+      user_id: userId
     }),
     credentials: 'include'
   });

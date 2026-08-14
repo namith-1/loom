@@ -25,7 +25,7 @@ function LaunchContent() {
     setIsJoining(true);
     const trimmedName = guestName.trim();
     try {
-      const data = await joinMeeting(meetingId, localPwd, trimmedName);
+      const data = await joinMeeting(meetingId, localPwd, trimmedName, user.userId);
       setSession(data.name, data.user_id);
       setTimeout(() => {
         const query = new URLSearchParams({
