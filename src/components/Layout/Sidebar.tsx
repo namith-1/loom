@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDashboardStore } from '@/store/useDashboardStore';
 
 type NavItem = {
   name: string;
@@ -38,12 +39,27 @@ const myAccount: NavItem[] = [
 ];
 
 export default function Sidebar() {
+  const { isSidebarOpen, toggleSidebar } = useDashboardStore();
   const [activeItem, setActiveItem] = useState('Home');
   const [isAccountOpen, setIsAccountOpen] = useState(true);
 
   return (
-    <aside className="w-64 flex-shrink-0 border-r border-gray-200 bg-[#FAFAFC] h-[calc(100vh-3.5rem)] overflow-y-auto flex flex-col justify-between">
-      <div className="py-4">
+    <>
+      {/* Mobile backdrop */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-30 bg-gray-900/50 md:hidden" 
+          onClick={toggleSidebar}
+        />
+      )}
+      
+      <aside className={cn(
+        "fixed md:static inset-y-0 left-0 z-40 w-64 flex-shrink-0 border-r border-gray-200 bg-[#FAFAFC] overflow-y-auto flex flex-col justify-between transition-transform duration-200 ease-in-out md:translate-x-0",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full",
+        // On desktop, we want it to take height from parent flex layout, on mobile full height
+        "h-full md:h-[calc(100vh-3.5rem)]"
+      )}>
+        <div className="py-4">
         {/* My Products Section */}
         <div className="px-4 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
           My Products
@@ -132,5 +148,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

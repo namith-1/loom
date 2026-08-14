@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDashboardStore } from '@/store/useDashboardStore';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Menu } from 'lucide-react';
 
 export default function TopNav() {
-  const { user } = useDashboardStore();
+  const { user, toggleSidebar } = useDashboardStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHostOpen, setIsHostOpen] = useState(false);
   const router = useRouter();
@@ -15,10 +15,18 @@ export default function TopNav() {
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-6">
       <div className="flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2">
-          {/* Mock Zoom Logo */}
-          <div className="text-blue-600 font-bold text-3xl tracking-tighter">zoom</div>
-        </Link>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={toggleSidebar}
+            className="md:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <Link href="/" className="flex items-center gap-2">
+            {/* Mock Zoom Logo */}
+            <div className="text-blue-600 font-bold text-3xl tracking-tighter">zoom</div>
+          </Link>
+        </div>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
           <Link href="#" className="hover:text-blue-600">Products</Link>
           <Link href="#" className="hover:text-blue-600">Solutions</Link>
