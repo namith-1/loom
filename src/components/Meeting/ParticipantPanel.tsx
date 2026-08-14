@@ -61,7 +61,10 @@ export default function ParticipantPanel() {
       {/* Footer */}
       <div className="h-14 border-t border-gray-800 flex items-center justify-between px-4 flex-shrink-0 bg-[#242424]">
         <button 
-          onClick={() => useMeetingStore.getState().setActivePopover('invite')}
+          onClick={(e) => {
+            e.stopPropagation();
+            useMeetingStore.getState().setActivePopover('invite');
+          }}
           className="px-4 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-medium transition-colors"
         >
           Invite
