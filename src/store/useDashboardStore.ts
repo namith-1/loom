@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Meeting = {
+export interface Meeting {
   id: string;
   title: string;
   time: string;
   date: string;
   isUpcoming: boolean;
+  passcode?: string;
 };
 
 interface DashboardState {
