@@ -287,7 +287,7 @@ async def join_meeting(data: JoinMeetingRequest, response: Response, request: Re
                 name=data.name
             )
             user_sessions[session_id] = session_data
-            response.set_cookie(key="session_id", value=session_id, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30)
+            response.set_cookie(key="session_id", value=session_id, httponly=True, samesite="none", secure=True, max_age=60 * 60 * 24 * 30)
             
             def save_guest():
                 with get_db() as db:
@@ -342,7 +342,7 @@ async def login(data: LoginRequest, response: Response, background_tasks: Backgr
             db.commit()
     background_tasks.add_task(save_session)
     
-    response.set_cookie(key="session_id", value=session_id, httponly=True, samesite="lax", max_age=60 * 60 * 24 * 30)
+    response.set_cookie(key="session_id", value=session_id, httponly=True, samesite="none", secure=True, max_age=60 * 60 * 24 * 30)
     return {"status": "success", "user_id": user_id, "name": data.name}
 
 @app.get("/api/auth/me")
