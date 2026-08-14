@@ -75,7 +75,8 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
       isVideoOff: !cameraOn,
       participants
     });
-    useMeetingStore.getState().updateServerState({
+    useMeetingStore.getState().sendWebSocketEvent({
+      event: 'STATE_UPDATE',
       audio_on: audioOn,
       camera_on: cameraOn
     });
@@ -371,7 +372,7 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
       metadataWsRef.current?.close();
       Object.values(callsRef.current).forEach((call) => call.close());
       callsRef.current = {};
-      useMeetingStore.setState({ updateServerState: () => {} });
+      useMeetingStore.setState({ sendWebSocketEvent: () => {} });
     };
   }, [
     enabled,

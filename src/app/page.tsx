@@ -19,6 +19,26 @@ export default function Dashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('returnTo');
+  
+  const [currentMeetingId, setCurrentMeetingId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (user.name) {
+      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+      const apiHost = process.env.NEXT_PUBLIC_WS_URL 
+        ? process.env.NEXT_PUBLIC_WS_URL.replace('ws:', 'http:').replace('wss:', 'https:')
+        : `${protocol}//${window.location.hostname}:8000`;
+        
+      fetch(`${apiHost}/api/auth/session`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.current_meeting) {
+            setCurrentMeetingId(data.current_meeting);
+          }
+        })
+        .catch(err => console.error("Failed to fetch session", err));
+    }
+  }, [user.name]);
 
   if (!user.name) {
     return (
@@ -100,6 +120,22 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-6">
               
               <div className="space-y-6">
+                {currentMeetingId && (
+                  <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg flex items-center justify-between border border-blue-500 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                    <div className="relative z-10">
+                      <h3 className="font-bold text-xl mb-1">Meeting in Progress</h3>
+                      <p className="text-blue-100 text-sm">You have an active meeting session.</p>
+                    </div>
+                    <button 
+                      onClick={() => router.push(`/launch?meetingId=${currentMeetingId}&autoJoin=true`)}
+                      className="relative z-10 bg-white text-blue-600 px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95"
+                    >
+                      Return to Meeting
+                    </button>
+                  </div>
+                )}
+                
                 <ProfileCard />
                 <PromoCard />
               </div>
