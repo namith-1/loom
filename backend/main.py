@@ -115,6 +115,8 @@ origins = [
     "http://127.0.0.1:8000",
 ]
 if frontend_url:
+    # Strip trailing slash to match browser Origin headers
+    frontend_url = frontend_url.rstrip("/")
     origins.append(frontend_url)
 
 app.add_middleware(
