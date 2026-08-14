@@ -45,6 +45,7 @@ interface MeetingState {
   setRightPanel: (panel: RightPanel) => void;
   setActivePopover: (popover: PopoverType) => void;
   toggleMute: () => void;
+  forceMute: () => void;
   toggleVideo: () => void;
   pinParticipant: (id: string) => void;
   spotlightParticipant: (id: string) => void;
@@ -92,6 +93,21 @@ export const useMeetingStore = create<MeetingState>((set) => ({
     }
     
     return { isMuted: newMuted, participants };
+  }),
+  forceMute: () => set((state) => {
+    if (state.isMuted) return state; // Already muted
+    
+    if (state.localStream && state.localStream.getAudioTracks().length > 0) {
+      state.localStream.getAudioTracks().forEach(t => t.enabled = false);
+    }
+    
+    const participants = state.participants.map(p => 
+      p.isMe ? { ...p, isMuted: true } : p
+    );
+    
+    // Do NOT send a websocket event here to avoid infinite loops, 
+    // since this is called when the server already told us we are muted.
+    return { isMuted: true, participants };
   }),
   toggleVideo: () => set((state) => {
     const newVideoOff = !state.isVideoOff;

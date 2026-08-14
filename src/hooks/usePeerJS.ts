@@ -321,8 +321,14 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
           for (const [aId, attendee] of Object.entries(message.attendees)) {
             const existingParticipant = existingParticipants.find((p) => p.id === aId);
 
-            if (aId === attendeeId && attendee.is_host) {
-              currentUserHost = true;
+            if (aId === attendeeId) {
+              if (attendee.is_host) {
+                currentUserHost = true;
+              }
+              const currentlyMuted = useMeetingStore.getState().isMuted;
+              if (!currentlyMuted && !attendee.audio_on) {
+                useMeetingStore.getState().forceMute();
+              }
             }
 
             participantList.push({
