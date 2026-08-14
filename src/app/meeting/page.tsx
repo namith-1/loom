@@ -55,7 +55,7 @@ function MeetingContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-black overflow-hidden font-sans select-none">
+    <div className="flex flex-col h-[100dvh] w-full bg-black overflow-hidden font-sans select-none">
       
       {/* Absolute Overlays */}
       <TopBar />
