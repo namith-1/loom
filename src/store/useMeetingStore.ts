@@ -55,7 +55,7 @@ interface MeetingState {
 export const useMeetingStore = create<MeetingState>((set) => ({
   participants: [],
   viewMode: 'speaker',
-  rightPanel: 'participants',
+  rightPanel: null,
   activePopover: null,
   meetingTitle: "Meeting",
   isMuted: false,

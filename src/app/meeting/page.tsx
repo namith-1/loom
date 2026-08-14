@@ -62,7 +62,7 @@ function MeetingContent() {
       <Popovers />
 
       {/* Main Layout Area */}
-      <div className="flex flex-1 w-full overflow-hidden pt-12" onClick={() => setActivePopover(null)}>
+      <div className="flex flex-1 w-full overflow-hidden pt-12 relative" onClick={() => setActivePopover(null)}>
         
         {/* Video Grid Area */}
         <VideoGrid />
