@@ -30,7 +30,7 @@ function MeetingContent() {
   useEffect(() => {
     const launchUrl = pwd ? `/launch?meetingId=${meetingId}&pwd=${pwd}&autoJoin=true` : `/launch?meetingId=${meetingId}&autoJoin=true`;
     
-    if (!user?.name) {
+    if (!user?.name && !urlName) {
       // No session -> go to login page (/)
       router.push(`/?returnTo=${encodeURIComponent(launchUrl)}`);
     } else if (!urlName) {
