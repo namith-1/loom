@@ -15,6 +15,7 @@ type MeetingMessage = {
   event?: string;
   attendee_id?: string;
   peerId?: string;
+  original_host_id?: string;
   attendees?: Record<string, AttendeeMessage>;
 };
 
@@ -280,6 +281,16 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
         const message = JSON.parse(event.data) as MeetingMessage;
         console.log('WebSocket received:', message);
 
+        if (message.original_host_id) {
+          useMeetingStore.getState().setOriginalHostId(message.original_host_id);
+        }
+
+        if (message.event === 'END_MEETING') {
+          alert("The host has ended this meeting.");
+          window.location.href = '/';
+          return;
+        }
+
         if (message.attendees) {
           const existingParticipants = useMeetingStore.getState().participants;
           const participantList: Participant[] = [];
@@ -319,13 +330,10 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
       };
 
       useMeetingStore.setState({
-        updateServerState: (updates: ServerStateUpdate) => {
-          console.log('updateServerState called with:', updates, 'ReadyState:', metadataWs.readyState);
+        sendWebSocketEvent: (payload: any) => {
+          console.log('sendWebSocketEvent called with:', payload, 'ReadyState:', metadataWs.readyState);
           if (metadataWs.readyState === WebSocket.OPEN) {
-            metadataWs.send(JSON.stringify({
-              event: 'STATE_UPDATE',
-              ...updates
-            }));
+            metadataWs.send(JSON.stringify(payload));
           }
         }
       });

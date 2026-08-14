@@ -34,6 +34,9 @@ interface MeetingState {
   localStream: MediaStream | null;
   remoteStreams: Record<string, MediaStream>;
   
+  originalHostId: string | null;
+  setOriginalHostId: (id: string | null) => void;
+  
   // Actions
   setParticipants: (participants: Participant[]) => void;
   setViewMode: (mode: ViewMode) => void;
@@ -46,11 +49,7 @@ interface MeetingState {
   setIsCurrentUserHost: (isHost: boolean) => void;
   setLocalStream: (stream: MediaStream | null) => void;
   setRemoteStream: (attendeeId: string, stream: MediaStream) => void;
-  updateServerState: (updates: Partial<{
-    audio_on: boolean;
-    camera_on: boolean;
-    screen_sharing: boolean;
-  }>) => void;
+  sendWebSocketEvent: (payload: any) => void;
 }
 
 export const useMeetingStore = create<MeetingState>((set) => ({
@@ -64,6 +63,9 @@ export const useMeetingStore = create<MeetingState>((set) => ({
   isCurrentUserHost: false,
   localStream: null,
   remoteStreams: {},
+
+  originalHostId: null,
+  setOriginalHostId: (id: string | null) => set({ originalHostId: id }),
 
   setParticipants: (participants) => set({ participants }),
   setViewMode: (mode) => set({ viewMode: mode, activePopover: null }),
@@ -81,8 +83,8 @@ export const useMeetingStore = create<MeetingState>((set) => ({
       p.isMe ? { ...p, isMuted: newMuted } : p
     );
     
-    if (state.updateServerState) {
-      state.updateServerState({ audio_on: !newMuted });
+    if (state.sendWebSocketEvent) {
+      state.sendWebSocketEvent({ event: 'STATE_UPDATE', audio_on: !newMuted });
     }
     
     return { isMuted: newMuted, participants };
@@ -97,8 +99,8 @@ export const useMeetingStore = create<MeetingState>((set) => ({
       p.isMe ? { ...p, isVideoOff: newVideoOff } : p
     );
     
-    if (state.updateServerState) {
-      state.updateServerState({ camera_on: !newVideoOff });
+    if (state.sendWebSocketEvent) {
+      state.sendWebSocketEvent({ event: 'STATE_UPDATE', camera_on: !newVideoOff });
     }
     
     return { isVideoOff: newVideoOff, participants };
@@ -108,7 +110,7 @@ export const useMeetingStore = create<MeetingState>((set) => ({
   setRemoteStream: (attendeeId, stream) => set((state) => ({
     remoteStreams: { ...state.remoteStreams, [attendeeId]: stream }
   })),
-  updateServerState: () => {}, // Replaced by useMediaWebSockets hook
+  sendWebSocketEvent: () => {}, // Replaced by usePeerJS hook
   
   pinParticipant: (id) => set((state) => {
     // Zoom allows multiple pins, but for simplicity we'll toggle pin on one or set exclusively

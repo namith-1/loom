@@ -231,7 +231,10 @@ export default function Popovers() {
       {activePopover === 'end' && (
         <div className="absolute bottom-20 right-4 w-[280px] bg-[#1a1a1a] rounded-xl shadow-2xl border border-gray-700 z-50 p-4">
           <button 
-            onClick={handleLeave}
+            onClick={() => {
+              useMeetingStore.getState().sendWebSocketEvent({ event: 'END_MEETING' });
+              setActivePopover(null);
+            }}
             className="w-full bg-[#e02828] hover:bg-[#c92222] text-white font-medium py-3 rounded-lg mb-3 transition-colors"
           >
             End Meeting for All

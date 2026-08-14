@@ -1,9 +1,13 @@
 import React from 'react';
 import { useMeetingStore } from '@/store/useMeetingStore';
 import { ShieldCheck, Info, Grid } from 'lucide-react';
+import { useDashboardStore } from '@/store/useDashboardStore';
 
 export default function TopBar() {
-  const { meetingTitle, setActivePopover } = useMeetingStore();
+  const { meetingTitle, setActivePopover, originalHostId, isCurrentUserHost, sendWebSocketEvent } = useMeetingStore();
+  const { userId } = useDashboardStore();
+  
+  const canReclaimHost = !isCurrentUserHost && originalHostId === userId;
 
   return (
     <div className="absolute top-0 left-0 right-0 h-12 flex items-center justify-between px-4 z-40 bg-gradient-to-b from-black/80 to-transparent">
@@ -22,6 +26,18 @@ export default function TopBar() {
           {meetingTitle}
         </div>
       </div>
+
+      {/* Center section: Reclaim Host */}
+      {canReclaimHost && (
+        <div className="flex items-center justify-center absolute left-1/2 -translate-x-1/2">
+          <button 
+            onClick={() => sendWebSocketEvent({ event: 'RECLAIM_HOST' })}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition-colors shadow-lg animate-pulse"
+          >
+            Reclaim Host
+          </button>
+        </div>
+      )}
 
       {/* Right section: Views */}
       <div className="flex items-center gap-3 relative mr-8">

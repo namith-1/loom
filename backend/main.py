@@ -141,6 +141,7 @@ class MeetingRoom(BaseModel):
     meeting_id: str
     passcode: Optional[str] = None
     host_id: Optional[str] = None
+    original_host_id: Optional[str] = None
     attendees: Dict[str, AttendeeState] = Field(default_factory=dict)
 
 active_sessions: Dict[str, MeetingRoom] = {}
@@ -198,7 +199,8 @@ async def create_meeting(data: CreateMeetingRequest, request: Request, backgroun
         active_sessions[meeting_id] = MeetingRoom(
             meeting_id=meeting_id,
             passcode=passcode,
-            host_id=host_user_id
+            host_id=host_user_id,
+            original_host_id=host_user_id
         )
         
         def save_meeting():
@@ -245,7 +247,8 @@ async def join_meeting(data: JoinMeetingRequest, response: Response, request: Re
             active_sessions[data.meeting_id] = MeetingRoom(
                 meeting_id=data.meeting_id,
                 passcode=row['passcode'],
-                host_id=row['host_id']
+                host_id=row['host_id'],
+                original_host_id=row['host_id']
             )
         
         room = active_sessions[data.meeting_id]
@@ -462,7 +465,17 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
 
     async with room_lock:
         if meeting_id not in active_sessions:
-            active_sessions[meeting_id] = MeetingRoom(meeting_id=meeting_id, host_id=user_id)
+            with get_db() as db:
+                row = db.execute("SELECT * FROM meetings WHERE meeting_id = ?", (meeting_id,)).fetchone()
+            if not row:
+                await websocket.close(code=4004, reason="Meeting does not exist")
+                return
+            active_sessions[meeting_id] = MeetingRoom(
+                meeting_id=meeting_id,
+                passcode=row['passcode'],
+                host_id=row['host_id'],
+                original_host_id=row['host_id']
+            )
         
         room = active_sessions[meeting_id]
         
@@ -485,6 +498,7 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
 
     await manager.broadcast(meeting_id, {
         "event": "PARTICIPANT_JOINED",
+        "original_host_id": active_sessions[meeting_id].original_host_id,
         "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
     })
 
@@ -506,6 +520,7 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
                             
                 await manager.broadcast(meeting_id, {
                     "event": "STATE_SYNC",
+                    "original_host_id": room.original_host_id if room else None,
                     "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
                 })
 
@@ -521,6 +536,7 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
                     "event": "USER_JOINED",
                     "attendee_id": attendee_id,
                     "peerId": message.get("peerId"),
+                    "original_host_id": room.original_host_id if room else None,
                     "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
                 })
 
@@ -533,8 +549,31 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
                                 att.audio_on = False
                 await manager.broadcast(meeting_id, {
                     "event": "STATE_SYNC",
+                    "original_host_id": room.original_host_id if room else None,
                     "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
                 })
+
+            elif event_type == "RECLAIM_HOST":
+                async with room_lock:
+                    room = active_sessions.get(meeting_id)
+                    if room and user_id == room.original_host_id:
+                        room.host_id = user_id
+                        for att in room.attendees.values():
+                            att.is_host = (att.user_id == user_id)
+                await manager.broadcast(meeting_id, {
+                    "event": "STATE_SYNC",
+                    "original_host_id": room.original_host_id if room else None,
+                    "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
+                })
+
+            elif event_type == "END_MEETING":
+                async with room_lock:
+                    room = active_sessions.get(meeting_id)
+                    if room and room.attendees.get(attendee_id, {}).is_host:
+                        await manager.broadcast(meeting_id, {
+                            "event": "END_MEETING"
+                        })
+                        active_sessions.pop(meeting_id, None)
 
     except WebSocketDisconnect:
         await manager.disconnect(meeting_id, attendee_id)
@@ -553,5 +592,6 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
 
         await manager.broadcast(meeting_id, {
             "event": "PARTICIPANT_LEFT",
+            "original_host_id": active_sessions[meeting_id].original_host_id if meeting_id in active_sessions else None,
             "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()} if meeting_id in active_sessions else {}
         })
