@@ -208,7 +208,6 @@ async def create_meeting(data: CreateMeetingRequest, request: Request, backgroun
     async with room_lock:
         meeting_id = str(uuid.uuid4())[:8]
         passcode = str(uuid.uuid4())[:6] if data.secure_with_pwd else None
-        host_user_id = session_data.user_id
         
         active_sessions[meeting_id] = MeetingRoom(
             meeting_id=meeting_id,
@@ -406,7 +405,6 @@ async def schedule_meeting(data: ScheduleMeetingRequest, request: Request, backg
         
     meeting_id = str(uuid.uuid4())[:8]
     passcode = str(uuid.uuid4())[:6] if data.secure_with_pwd else None
-    host_user_id = session_data.user_id
     scheduled_datetime = f"{data.date} {data.time}"
     
     def save_scheduled():
