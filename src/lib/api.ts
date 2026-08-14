@@ -21,11 +21,11 @@ export type JoinMeetingResponse = {
   requires_pwd: boolean;
 };
 
-export async function createMeeting(title: string = 'New Meeting', secure: boolean = true) {
+export async function createMeeting(title: string = 'New Meeting', secure: boolean = true, userId?: string, name?: string) {
   const res = await fetch(`${getApiUrl()}/meetings/create`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, secure_with_pwd: secure }),
+    body: JSON.stringify({ title, secure_with_pwd: secure, user_id: userId, name }),
     credentials: 'include'
   });
   if (!res.ok) throw new Error('Failed to create meeting');

@@ -183,12 +183,26 @@ manager = ConnectionManager()
 class CreateMeetingRequest(BaseModel):
     title: str
     secure_with_pwd: bool = True
+    user_id: Optional[str] = None
+    name: Optional[str] = None
 
 @app.post("/api/meetings/create")
 async def create_meeting(data: CreateMeetingRequest, request: Request, background_tasks: BackgroundTasks):
     session_id = request.cookies.get("session_id")
     session_data = get_session_data(session_id)
-    if not session_data:
+    
+    if session_data:
+        host_user_id = session_data.user_id
+    elif data.user_id and data.name:
+        host_user_id = data.user_id
+        def ensure_user():
+            with get_db() as db:
+                row = db.execute("SELECT user_id FROM users WHERE user_id = ?", (host_user_id,)).fetchone()
+                if not row:
+                    db.execute("INSERT INTO users (user_id, name) VALUES (?, ?)", (host_user_id, data.name))
+                    db.commit()
+        background_tasks.add_task(ensure_user)
+    else:
         raise HTTPException(status_code=401, detail="Must be logged in to create a meeting")
         
     async with room_lock:
@@ -368,12 +382,26 @@ class ScheduleMeetingRequest(BaseModel):
     date: str
     time: str
     secure_with_pwd: bool = True
+    user_id: Optional[str] = None
+    name: Optional[str] = None
 
 @app.post("/api/meetings/schedule")
 async def schedule_meeting(data: ScheduleMeetingRequest, request: Request, background_tasks: BackgroundTasks):
     session_id = request.cookies.get("session_id")
     session_data = get_session_data(session_id)
-    if not session_data:
+    
+    if session_data:
+        host_user_id = session_data.user_id
+    elif data.user_id and data.name:
+        host_user_id = data.user_id
+        def ensure_user_sched():
+            with get_db() as db:
+                row = db.execute("SELECT user_id FROM users WHERE user_id = ?", (host_user_id,)).fetchone()
+                if not row:
+                    db.execute("INSERT INTO users (user_id, name) VALUES (?, ?)", (host_user_id, data.name))
+                    db.commit()
+        background_tasks.add_task(ensure_user_sched)
+    else:
         raise HTTPException(status_code=401, detail="Must be logged in to schedule a meeting")
         
     meeting_id = str(uuid.uuid4())[:8]

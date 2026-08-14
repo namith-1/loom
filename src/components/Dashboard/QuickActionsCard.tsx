@@ -8,14 +8,13 @@ import { createMeeting } from '@/lib/api';
 
 export default function QuickActionsCard() {
   const router = useRouter();
-  const { setJoinModalOpen, setScheduleModalOpen, user, setSession } = useDashboardStore();
+  const { setJoinModalOpen, setScheduleModalOpen, user, userId, setSession } = useDashboardStore();
   const [isHosting, setIsHosting] = useState(false);
 
   const handleHostNewMeeting = async () => {
     setIsHosting(true);
     try {
-      const data = await createMeeting('My Instant Meeting', true);
-      // Automatically redirect the host to the launch page
+      const data = await createMeeting('My Instant Meeting', true, userId, user.name);
       router.push(data.invite_link);
     } catch (err) {
       console.error(err);

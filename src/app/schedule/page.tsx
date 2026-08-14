@@ -9,7 +9,7 @@ import Sidebar from '@/components/Layout/Sidebar';
 
 export default function SchedulePage() {
   const router = useRouter();
-  const { user } = useDashboardStore();
+  const { user, userId } = useDashboardStore();
   
   const [topic, setTopic] = useState('My Meeting');
   const [date, setDate] = useState('2026-08-13');
@@ -36,7 +36,9 @@ export default function SchedulePage() {
           title: topic,
           date,
           time: `${time} ${ampm}`,
-          secure_with_pwd: true
+          secure_with_pwd: true,
+          user_id: userId,
+          name: user.name
         }),
         credentials: 'include'
       });
