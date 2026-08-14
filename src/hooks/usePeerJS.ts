@@ -286,8 +286,27 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
           useMeetingStore.getState().setOriginalHostId(message.original_host_id);
         }
 
+        if (message.event === 'STATE_SYNC') {
+          // Apply host mute to our local stream if we were muted by the server!
+          const myState = message.attendees?.[attendeeId];
+          if (myState) {
+            const currentStore = useMeetingStore.getState();
+            if (currentStore.isMuted === false && myState.audio_on === false) {
+              // We were muted by the host!
+              useMeetingStore.setState({ isMuted: true });
+              if (localStreamRef.current) {
+                localStreamRef.current.getAudioTracks().forEach(t => t.enabled = false);
+              }
+            }
+          }
+        }
+
         if (message.event === 'END_MEETING') {
           alert("The host has ended this meeting.");
+          window.location.href = '/';
+          return;
+        } else if (message.event === 'KICKED') {
+          alert('You have been removed from this meeting by the host.');
           window.location.href = '/';
           return;
         }

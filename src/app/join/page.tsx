@@ -97,12 +97,17 @@ export default function JoinPage() {
             type="submit"
             disabled={!meetingId.trim() || !displayName.trim() || isValidating}
             className={cn(
-              "mt-4 w-full rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+              "mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
               meetingId.trim() && displayName.trim() && !isValidating
                 ? "bg-blue-600 text-white hover:bg-blue-700" 
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             )}
           >
+            {isValidating && (
+              <svg className="h-4 w-4 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+            )}
             {isValidating ? "Validating..." : "Join"}
           </button>
         </form>

@@ -21,6 +21,7 @@ export default function Dashboard() {
   const returnTo = searchParams.get('returnTo');
   
   const [currentMeetingId, setCurrentMeetingId] = React.useState<string | null>(null);
+  const [isReturning, setIsReturning] = React.useState(false);
 
   React.useEffect(() => {
     if (user.name) {
@@ -128,10 +129,19 @@ export default function Dashboard() {
                       <p className="text-blue-100 text-sm">You have an active meeting session.</p>
                     </div>
                     <button 
-                      onClick={() => router.push(`/launch?meetingId=${currentMeetingId}&autoJoin=true`)}
-                      className="relative z-10 bg-white text-blue-600 px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95"
+                      onClick={() => {
+                        setIsReturning(true);
+                        router.push(`/launch?meetingId=${currentMeetingId}&autoJoin=true`);
+                      }}
+                      disabled={isReturning}
+                      className="relative z-10 flex items-center gap-2 bg-white text-blue-600 px-5 py-2.5 rounded-xl font-bold text-sm shadow-md hover:scale-105 hover:shadow-xl transition-all active:scale-95 disabled:opacity-80 disabled:hover:scale-100"
                     >
-                      Return to Meeting
+                      {isReturning && (
+                        <svg className="h-4 w-4 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        </svg>
+                      )}
+                      {isReturning ? 'Returning...' : 'Return to Meeting'}
                     </button>
                   </div>
                 )}

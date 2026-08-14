@@ -602,6 +602,14 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
                             "event": "END_MEETING"
                         })
                         active_sessions.pop(meeting_id, None)
+                        
+            elif event_type == "KICK_PARTICIPANT":
+                target_id = message.get("target_id")
+                async with room_lock:
+                    room = active_sessions.get(meeting_id)
+                    if room and room.attendees.get(attendee_id, {}).is_host:
+                        if target_id in room.attendees:
+                            await manager.send_personal(meeting_id, target_id, {"event": "KICKED"})
 
     except WebSocketDisconnect:
         await manager.disconnect(meeting_id, attendee_id)

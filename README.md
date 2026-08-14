@@ -40,6 +40,7 @@ Navigate to `http://localhost:3000` in your web browser.
 ### Authentication & Users
 - **Assumption:** Since the assignment specified "No Login Required: Assume a default user is logged in", a lightweight pseudo-authentication system was implemented.
 - **Implementation:** Users provide a Display Name to "log in". The backend automatically generates a unique UUID for them and issues a Secure, HTTP-Only `session_id` cookie. This allows the system to seamlessly distinguish between the "Host" (the person who created the meeting) and "Guests" without requiring passwords or complex OAuth setups.
+- **Important Notice regarding Sessions:** This is a temporary session created solely by entering a display name. If the browser is completely closed and reopened (or if local data is cleared), the session will be lost and the user will simply be prompted to enter a display name again.
 
 ### Database Architecture
 - **Assumption:** SQLite is used as the primary database, but it requires careful handling in concurrent environments.
