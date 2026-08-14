@@ -35,7 +35,7 @@ const ParticipantCard = ({
       setActiveReaction({ id: reactionId, emoji: participant.reaction });
       const timer = setTimeout(() => {
         setActiveReaction(current => current?.id === reactionId ? null : current);
-      }, 3000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [participant.reaction]);

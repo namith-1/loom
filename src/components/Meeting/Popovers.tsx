@@ -34,7 +34,7 @@ export default function Popovers() {
     // Remove after animation
     setTimeout(() => {
       setFloatingEmojis(prev => prev.filter(e => e.id !== id));
-    }, 2000);
+    }, 5000);
   };
 
   const handleLeave = async () => {
@@ -203,7 +203,7 @@ export default function Popovers() {
             }}
             className="w-full bg-[#2a2a2a] hover:bg-[#333] rounded-lg py-3 flex justify-center items-center gap-2 text-white font-medium mb-2 border border-transparent hover:border-gray-600"
           >
-            ✋ Raise Hand
+            {useMeetingStore.getState().participants.find(p => p.isMe)?.handRaised ? '✋ Lower Hand' : '✋ Raise Hand'}
           </button>
           <button className="w-full bg-[#2a2a2a] hover:bg-[#333] rounded-lg py-3 flex justify-center items-center gap-2 text-white font-medium border border-transparent hover:border-gray-600">
             ⏳ Be right back
