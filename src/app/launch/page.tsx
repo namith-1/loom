@@ -9,7 +9,7 @@ import { joinMeeting } from '@/lib/api';
 
 function LaunchContent() {
   const [isJoining, setIsJoining] = useState(false);
-  const { user, setSession } = useDashboardStore();
+  const { user, userId, setSession } = useDashboardStore();
   const [guestName, setGuestName] = useState(user.name || '');
   
   const router = useRouter();
@@ -25,7 +25,7 @@ function LaunchContent() {
     setIsJoining(true);
     const trimmedName = guestName.trim();
     try {
-      const data = await joinMeeting(meetingId, localPwd, trimmedName, user.userId);
+      const data = await joinMeeting(meetingId, localPwd, trimmedName, userId);
       setSession(data.name, data.user_id);
       setTimeout(() => {
         const query = new URLSearchParams({

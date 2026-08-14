@@ -9,7 +9,7 @@ import { useDashboardStore } from '@/store/useDashboardStore';
 export default function JoinPage() {
   const [meetingId, setMeetingId] = useState('');
   const [passcode, setPasscode] = useState('');
-  const { user, setSession } = useDashboardStore();
+  const { user, userId, setSession } = useDashboardStore();
   const [displayName, setDisplayName] = useState(user.name || '');
   const [isValidating, setIsValidating] = useState(false);
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function JoinPage() {
     setIsValidating(true);
     try {
       const { joinMeeting } = await import('@/lib/api');
-      const data = await joinMeeting(trimmedMeetingId, passcode.trim(), trimmedName, user.userId);
+      const data = await joinMeeting(trimmedMeetingId, passcode.trim(), trimmedName, userId);
       setSession(data.name, data.user_id);
 
       const query = new URLSearchParams({
