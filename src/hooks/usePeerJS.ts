@@ -9,6 +9,8 @@ type AttendeeMessage = {
   camera_on: boolean;
   audio_on: boolean;
   peer_id?: string | null;
+  hand_raised?: boolean;
+  reaction?: string | null;
 };
 
 type MeetingMessage = {
@@ -334,7 +336,9 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
               isVideoOff: !attendee.camera_on,
               isPinned: existingParticipant?.isPinned ?? false,
               isSpotlighted: existingParticipant?.isSpotlighted ?? false,
-              peerId: attendee.peer_id || undefined
+              peerId: attendee.peer_id || undefined,
+              handRaised: attendee.hand_raised || false,
+              reaction: attendee.reaction || undefined
             });
           }
 

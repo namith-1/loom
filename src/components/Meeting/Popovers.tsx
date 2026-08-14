@@ -22,7 +22,10 @@ export default function Popovers() {
   if (!activePopover) return null;
 
   const handleReact = (emoji: string) => {
-    // Spawn floating emoji
+    // Also broadcast reaction
+    useMeetingStore.getState().sendReaction(emoji);
+    
+    // Spawn floating emoji locally for immediate feedback
     emojiIdRef.current += 1;
     const id = emojiIdRef.current;
     setFloatingEmojis(prev => [...prev, { id, emoji }]);
@@ -193,7 +196,13 @@ export default function Popovers() {
             <button className="flex-1 bg-[#2a2a2a] hover:bg-[#333] rounded-lg py-2 flex justify-center items-center text-gray-300 border border-transparent hover:border-gray-600">☕</button>
           </div>
 
-          <button className="w-full bg-[#2a2a2a] hover:bg-[#333] rounded-lg py-3 flex justify-center items-center gap-2 text-white font-medium mb-2 border border-transparent hover:border-gray-600">
+          <button 
+            onClick={() => {
+              useMeetingStore.getState().toggleHand();
+              setActivePopover(null);
+            }}
+            className="w-full bg-[#2a2a2a] hover:bg-[#333] rounded-lg py-3 flex justify-center items-center gap-2 text-white font-medium mb-2 border border-transparent hover:border-gray-600"
+          >
             ✋ Raise Hand
           </button>
           <button className="w-full bg-[#2a2a2a] hover:bg-[#333] rounded-lg py-3 flex justify-center items-center gap-2 text-white font-medium border border-transparent hover:border-gray-600">

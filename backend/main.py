@@ -136,6 +136,8 @@ class AttendeeState(BaseModel):
     audio_on: bool = False
     screen_sharing: bool = False
     peer_id: Optional[str] = None
+    hand_raised: bool = False
+    reaction: Optional[str] = None
 
 class MeetingRoom(BaseModel):
     meeting_id: str
@@ -553,6 +555,32 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
                             if "camera_on" in message: sender.camera_on = message["camera_on"]
                             if "screen_sharing" in message: sender.screen_sharing = message["screen_sharing"]
                             
+                await manager.broadcast(meeting_id, {
+                    "event": "STATE_SYNC",
+                    "original_host_id": room.original_host_id if room else None,
+                    "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
+                })
+
+            elif event_type == "TOGGLE_HAND":
+                async with room_lock:
+                    room = active_sessions.get(meeting_id)
+                    if room:
+                        sender = room.attendees.get(attendee_id)
+                        if sender:
+                            sender.hand_raised = message.get("hand_raised", not sender.hand_raised)
+                await manager.broadcast(meeting_id, {
+                    "event": "STATE_SYNC",
+                    "original_host_id": room.original_host_id if room else None,
+                    "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
+                })
+
+            elif event_type == "SEND_REACTION":
+                async with room_lock:
+                    room = active_sessions.get(meeting_id)
+                    if room:
+                        sender = room.attendees.get(attendee_id)
+                        if sender:
+                            sender.reaction = message.get("reaction")
                 await manager.broadcast(meeting_id, {
                     "event": "STATE_SYNC",
                     "original_host_id": room.original_host_id if room else None,

@@ -27,6 +27,19 @@ const ParticipantCard = ({
   const showVideo = hasLiveVideo && (participant.isMe ? !participant.isVideoOff : true);
   const showMutedIcon = participant.isMuted && !hasLiveAudio;
 
+  const [activeReaction, setActiveReaction] = React.useState<{id: number, emoji: string} | null>(null);
+
+  React.useEffect(() => {
+    if (participant.reaction) {
+      const reactionId = Date.now();
+      setActiveReaction({ id: reactionId, emoji: participant.reaction });
+      const timer = setTimeout(() => {
+        setActiveReaction(current => current?.id === reactionId ? null : current);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [participant.reaction]);
+
   React.useEffect(() => {
     if (videoRef.current && mediaStream && showVideo) {
       if (videoRef.current.srcObject !== mediaStream) {
@@ -83,6 +96,22 @@ const ParticipantCard = ({
         {showMutedIcon && <MicOff className="w-3 h-3 text-red-500" />}
         {participant.name}
       </div>
+      
+      {/* Hand Raised indicator */}
+      {participant.handRaised && (
+        <div className="absolute top-3 left-3 bg-gray-900/80 p-1.5 rounded-md text-xl z-20">
+          ✋
+        </div>
+      )}
+
+      {/* Reaction Display */}
+      {activeReaction && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+          <div className="text-6xl animate-bounce-up" key={activeReaction.id}>
+            {activeReaction.emoji}
+          </div>
+        </div>
+      )}
 
       {/* Hover actions */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex gap-1">

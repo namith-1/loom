@@ -49,6 +49,8 @@ export default function ParticipantPanel() {
                   Remove
                 </button>
               )}
+              {p.reaction && <span className="text-lg">{p.reaction}</span>}
+              {p.handRaised && <span className="text-lg">✋</span>}
               {p.isMuted && <MicOff className="w-4 h-4 text-red-500" />}
               {p.isVideoOff && <VideoOff className="w-4 h-4 text-red-500" />}
             </div>

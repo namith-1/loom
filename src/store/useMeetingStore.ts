@@ -13,6 +13,8 @@ export type Participant = {
   isSpotlighted: boolean;
   peerId?: string;
   stream?: MediaStream;
+  handRaised: boolean;
+  reaction?: string;
 };
 
 // Colors for random assignment when participants join
@@ -50,6 +52,8 @@ interface MeetingState {
   setLocalStream: (stream: MediaStream | null) => void;
   setRemoteStream: (attendeeId: string, stream: MediaStream) => void;
   sendWebSocketEvent: (payload: any) => void;
+  toggleHand: () => void;
+  sendReaction: (emoji: string) => void;
 }
 
 export const useMeetingStore = create<MeetingState>((set) => ({
@@ -128,5 +132,20 @@ export const useMeetingStore = create<MeetingState>((set) => ({
       isSpotlighted: p.id === id ? !p.isSpotlighted : false // exclusive spotlight
     }));
     return { participants: newParticipants, viewMode: 'speaker' };
+  }),
+
+  toggleHand: () => set((state) => {
+    const me = state.participants.find(p => p.isMe);
+    if (me && state.sendWebSocketEvent) {
+      state.sendWebSocketEvent({ event: 'TOGGLE_HAND', hand_raised: !me.handRaised });
+    }
+    return state;
+  }),
+  
+  sendReaction: (emoji: string) => set((state) => {
+    if (state.sendWebSocketEvent) {
+      state.sendWebSocketEvent({ event: 'SEND_REACTION', reaction: emoji });
+    }
+    return state;
   }),
 }));
