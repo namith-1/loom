@@ -22,7 +22,7 @@ export const participantColors = ['bg-purple-500', 'bg-orange-500', 'bg-blue-500
 
 type ViewMode = 'speaker' | 'gallery' | 'multi-speaker';
 type RightPanel = 'participants' | 'chat' | null;
-type PopoverType = 'info' | 'view' | 'react' | 'more' | 'end' | 'assign-host' | 'leave' | null;
+type PopoverType = 'info' | 'view' | 'react' | 'more' | 'end' | 'assign-host' | 'leave' | 'invite' | null;
 
 interface MeetingState {
   participants: Participant[];

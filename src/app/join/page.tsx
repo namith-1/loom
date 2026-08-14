@@ -61,7 +61,7 @@ export default function JoinPage() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="Enter your name"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             required
           />
 
@@ -73,7 +73,7 @@ export default function JoinPage() {
             value={meetingId}
             onChange={(e) => setMeetingId(e.target.value)}
             placeholder="Enter Meeting ID or Personal Link Name" 
-            className="w-full rounded border border-blue-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded border border-blue-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             required
           />
 
@@ -85,7 +85,7 @@ export default function JoinPage() {
             value={passcode}
             onChange={(e) => setPasscode(e.target.value)}
             placeholder="Enter passcode if required"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           
           <label className="mt-3 flex items-center gap-2 text-xs text-gray-700 cursor-pointer">

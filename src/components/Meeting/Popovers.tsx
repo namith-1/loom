@@ -328,6 +328,57 @@ export default function Popovers() {
           </div>
         </div>
       )}
+
+      {/* Invite Modal */}
+      {activePopover === 'invite' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
+          <div className="bg-[#1a1a1a] w-full max-w-2xl rounded-xl border border-gray-800 shadow-2xl flex flex-col">
+            <div className="p-6 pb-4">
+              <h2 className="text-white text-xl font-bold text-center">
+                Invite People to join meeting {meetingId.match(/.{1,3}/g)?.join(' ') || meetingId}
+              </h2>
+            </div>
+            
+            <div className="flex-1 min-h-[300px] p-6 text-gray-400 flex items-center justify-center">
+              <p className="text-sm">Select the copy options below to invite participants.</p>
+            </div>
+
+            <div className="p-4 border-t border-gray-800 flex items-center justify-between bg-[#242424] rounded-b-xl">
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={handleCopyInvite}
+                  className="text-blue-500 hover:text-blue-400 text-sm font-medium"
+                >
+                  Copy URL
+                </button>
+                <button 
+                  onClick={() => {
+                    const text = `You are invited to a Zoom meeting.\n\nMeeting ID: ${meetingId}\n${pwd ? `Passcode: ${pwd}\n` : ''}\nJoin link: ${inviteLink}`;
+                    navigator.clipboard.writeText(text);
+                  }}
+                  className="text-blue-500 hover:text-blue-400 text-sm font-medium"
+                >
+                  Copy Invitation
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                {pwd && (
+                  <span className="text-gray-400 text-sm">
+                    Passcode: <span className="text-white font-medium">{pwd}</span>
+                  </span>
+                )}
+                <button 
+                  onClick={() => setActivePopover(null)}
+                  className="px-4 py-1.5 rounded bg-[#333] hover:bg-[#444] text-white text-sm font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
