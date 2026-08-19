@@ -390,7 +390,19 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
       const messageQueue: Record<string, unknown>[] = [];
       
       metadataWs.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('Metadata WebSocket connected');
+        
+        metadataWs.send(JSON.stringify({
+          event: 'USER_JOINED',
+          peerId: id
+        }));
+        
+        metadataWs.send(JSON.stringify({
+          event: 'STATE_UPDATE',
+          audio_on: !useMeetingStore.getState().isMuted,
+          camera_on: !useMeetingStore.getState().isVideoOff
+        }));
+
         while (messageQueue.length > 0) {
           const msg = messageQueue.shift();
           if (msg) metadataWs.send(JSON.stringify(msg));
