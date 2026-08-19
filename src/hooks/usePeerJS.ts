@@ -33,25 +33,37 @@ type CallMetadata = {
 };
 
 const getCallableStream = (stream: MediaStream | null) => {
-  if (stream && stream.getTracks().length > 0) return stream;
-  
   try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    const dummyVideo = canvas.captureStream().getVideoTracks()[0];
-    dummyVideo.enabled = false;
+    const tracks: MediaStreamTrack[] = [];
+    const hasVideo = stream?.getVideoTracks().length;
+    const hasAudio = stream?.getAudioTracks().length;
 
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const dest = ctx.createMediaStreamDestination();
-      const dummyAudio = dest.stream.getAudioTracks()[0];
-      dummyAudio.enabled = false;
-      return new MediaStream([dummyVideo, dummyAudio]);
-    } catch {
-      // If AudioContext fails (e.g. autoplay policy), just return video
-      return new MediaStream([dummyVideo]);
+    if (hasVideo) {
+      tracks.push(stream.getVideoTracks()[0]);
+    } else {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const dummyVideo = canvas.captureStream().getVideoTracks()[0];
+      dummyVideo.enabled = false;
+      tracks.push(dummyVideo);
     }
+
+    if (hasAudio) {
+      tracks.push(stream.getAudioTracks()[0]);
+    } else {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const dest = ctx.createMediaStreamDestination();
+        const dummyAudio = dest.stream.getAudioTracks()[0];
+        dummyAudio.enabled = false;
+        tracks.push(dummyAudio);
+      } catch {
+        // AudioContext might fail due to autoplay policies
+      }
+    }
+    
+    return new MediaStream(tracks);
   } catch (e) {
     return new MediaStream();
   }
@@ -174,69 +186,57 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
     if (!enabled) return;
 
     const setupCamera = async () => {
-      if (isVideoOff && isMuted) return;
-
       const currentStream = localStreamRef.current;
-      const needsVideo = !isVideoOff && (!currentStream || currentStream.getVideoTracks().length === 0);
-      const needsAudio = !isMuted && (!currentStream || currentStream.getAudioTracks().length === 0);
-
-      if (!needsVideo && !needsAudio) return;
-
-      const reusableTracks = currentStream
-        ?.getTracks()
-        .filter((track) => track.readyState === 'live') ?? [];
       const tracks: MediaStreamTrack[] = [];
       let audioOn = !isMuted;
       let cameraOn = !isVideoOff;
 
       try {
         if (!isMuted) {
-          const existingAudioTrack = reusableTracks.find((track) => track.kind === 'audio');
-
-          if (existingAudioTrack) {
-            tracks.push(existingAudioTrack);
+          const existingAudio = currentStream?.getAudioTracks().find(t => t.readyState === 'live');
+          if (existingAudio) {
+            tracks.push(existingAudio);
           } else {
             try {
               const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
               tracks.push(...audioStream.getAudioTracks());
             } catch (err) {
-              console.warn('Microphone unavailable or permission denied:', err);
+              console.warn('Microphone unavailable:', err);
               audioOn = false;
             }
           }
         }
 
         if (!isVideoOff) {
-          const existingVideoTrack = reusableTracks.find((track) => track.kind === 'video');
-
-          if (existingVideoTrack) {
-            tracks.push(existingVideoTrack);
+          const existingVideo = currentStream?.getVideoTracks().find(t => t.readyState === 'live');
+          if (existingVideo) {
+            tracks.push(existingVideo);
           } else {
             try {
               const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
               tracks.push(...videoStream.getVideoTracks());
             } catch (err) {
-              console.warn('Camera unavailable or permission denied:', err);
+              console.warn('Camera unavailable:', err);
               cameraOn = false;
             }
           }
         }
 
-        const stream = new MediaStream(tracks);
-        stream.getVideoTracks().forEach((track) => { track.enabled = !isVideoOff; });
-        stream.getAudioTracks().forEach((track) => { track.enabled = !isMuted; });
-
-        currentStream?.getTracks().forEach((track) => {
+        const stream = tracks.length > 0 ? new MediaStream(tracks) : null;
+        
+        // Stop any tracks in the old stream that are not being reused in the new stream.
+        // This is what fully releases the hardware lock and turns off the camera light.
+        localStreamRef.current?.getTracks().forEach((track) => {
           if (!tracks.includes(track)) {
             track.stop();
           }
         });
+
         localStreamRef.current = stream;
         setLocalStream(stream);
         publishLocalMediaState(audioOn, cameraOn);
 
         // Dynamically replace tracks on all active WebRTC connections so the other peers see/hear our new media!
-        // This avoids creating duplicate calls which causes black screen freezes.
         Object.values(callsRef.current).forEach((call) => {
           const pc = call.peerConnection;
           if (pc) {
@@ -244,11 +244,11 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
             const videoSender = senders.find(s => s.track?.kind === 'video');
             const audioSender = senders.find(s => s.track?.kind === 'audio');
             
-            const newVideoTrack = stream.getVideoTracks()[0];
-            const newAudioTrack = stream.getAudioTracks()[0];
+            const newVideoTrack = stream?.getVideoTracks()[0] || null;
+            const newAudioTrack = stream?.getAudioTracks()[0] || null;
             
-            if (videoSender && newVideoTrack) videoSender.replaceTrack(newVideoTrack);
-            if (audioSender && newAudioTrack) audioSender.replaceTrack(newAudioTrack);
+            if (videoSender) videoSender.replaceTrack(newVideoTrack);
+            if (audioSender) audioSender.replaceTrack(newAudioTrack);
           }
         });
       } catch (err) {
