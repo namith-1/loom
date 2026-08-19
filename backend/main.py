@@ -195,7 +195,8 @@ async def get_turn_credentials():
     """
     url = f"https://{METERED_DOMAIN}/api/v1/turn/credentials?apiKey={METERED_API_KEY}"
     
-    async with httpx.AsyncClient() as client:
+    # Metered domains with underscores cause SSL Hostname mismatch errors in OpenSSL.
+    async with httpx.AsyncClient(verify=False) as client:
         try:
             response = await client.get(url)
             response.raise_for_status()
