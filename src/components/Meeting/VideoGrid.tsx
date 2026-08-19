@@ -24,7 +24,7 @@ const ParticipantCard = ({
   const hasLiveAudio = Boolean(
     mediaStream?.getAudioTracks().some((track) => track.readyState === 'live' && track.enabled)
   );
-  const showVideo = hasLiveVideo && (participant.isMe ? !participant.isVideoOff : true);
+  const showVideo = hasLiveVideo && !participant.isVideoOff;
   const showMutedIcon = participant.isMuted && !hasLiveAudio && !participant.isScreenShare;
 
   const [activeReaction, setActiveReaction] = React.useState<{id: number, emoji: string} | null>(null);
