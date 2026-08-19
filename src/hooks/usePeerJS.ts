@@ -235,8 +235,22 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
         setLocalStream(stream);
         publishLocalMediaState(audioOn, cameraOn);
 
-        // Calls made while muted/video-off carry no useful tracks, so refresh them.
-        callKnownParticipants(stream, true);
+        // Dynamically replace tracks on all active WebRTC connections so the other peers see/hear our new media!
+        // This avoids creating duplicate calls which causes black screen freezes.
+        Object.values(callsRef.current).forEach((call) => {
+          const pc = call.peerConnection;
+          if (pc) {
+            const senders = pc.getSenders();
+            const videoSender = senders.find(s => s.track?.kind === 'video');
+            const audioSender = senders.find(s => s.track?.kind === 'audio');
+            
+            const newVideoTrack = stream.getVideoTracks()[0];
+            const newAudioTrack = stream.getAudioTracks()[0];
+            
+            if (videoSender && newVideoTrack) videoSender.replaceTrack(newVideoTrack);
+            if (audioSender && newAudioTrack) audioSender.replaceTrack(newAudioTrack);
+          }
+        });
       } catch (err) {
         console.error('Error setting up local media:', err);
         publishLocalMediaState(false, false);
