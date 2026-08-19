@@ -184,25 +184,25 @@ export default function VideoGrid() {
   const others = participants.filter(p => p.id !== mainParticipant.id);
 
   return (
-    <div className="flex-1 w-full flex flex-col overflow-hidden" onClick={handleGridClick}>
+    <div className="flex-1 w-full flex flex-row overflow-hidden bg-black" onClick={handleGridClick}>
       
-      {/* Top strip of other participants */}
+      {/* Main Speaker */}
+      <div className="flex-1 p-4 flex items-center justify-center min-w-0">
+        <div className="w-full h-full">
+          <ParticipantCard participant={mainParticipant} isMain />
+        </div>
+      </div>
+
+      {/* Side strip of other participants */}
       {others.length > 0 && (
-        <div className="h-40 w-full bg-black flex justify-center items-center gap-2 px-4 py-2 overflow-x-auto hide-scrollbar flex-shrink-0">
+        <div className="w-48 lg:w-64 h-full bg-[#1a1a1a] flex flex-col items-center gap-3 p-3 overflow-y-auto hide-scrollbar flex-shrink-0 border-l border-gray-800">
           {others.slice(0, 5).map(p => (
-            <div key={p.id} className="h-full w-auto aspect-video">
+            <div key={p.id} className="w-full aspect-video flex-shrink-0">
               <ParticipantCard participant={p} />
             </div>
           ))}
         </div>
       )}
-
-      {/* Main Speaker */}
-      <div className="flex-1 p-4 pb-0 flex items-center justify-center">
-        <div className="w-full max-w-[1200px] h-full">
-          <ParticipantCard participant={mainParticipant} isMain />
-        </div>
-      </div>
       
     </div>
   );
