@@ -167,11 +167,12 @@ export default function VideoGrid() {
 
   // Speaker View
   const pinnedOrSpotlighted = participants.find(p => p.isPinned || p.isSpotlighted);
-  const host = participants.find(p => p.isHost);
-  const me = participants.find(p => p.isMe);
+  const screenShare = participants.find(p => p.isScreenShare);
+  const host = participants.find(p => p.isHost && !p.isScreenShare);
+  const me = participants.find(p => p.isMe && !p.isScreenShare);
   
-  // Priority: Pinned/Spotlighted > Host > Me (if no one else)
-  const mainParticipant = pinnedOrSpotlighted || host || me || participants[0];
+  // Priority: Pinned/Spotlighted > Screen Share > Host > Me (if no one else)
+  const mainParticipant = pinnedOrSpotlighted || screenShare || host || me || participants[0];
   
   if (!mainParticipant) {
     return (
