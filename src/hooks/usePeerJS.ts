@@ -280,8 +280,9 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
       }
       
       if (!mounted) return;
-
-      const peerOptions = iceServersArray ? { config: { iceServers: iceServersArray, iceTransportPolicy: 'relay' }, debug: 2 } : undefined;
+      // Allow 'all' transport policies so local devices can connect via P2P for free,
+      // saving the TURN server bandwidth strictly for strict firewalls.
+      const peerOptions = iceServersArray ? { config: { iceServers: iceServersArray, iceTransportPolicy: 'all' as const }, debug: 2 } : undefined;
       const peer = peerOptions ? new Peer(peerOptions) : new Peer();
       peerRef.current = peer;
 
