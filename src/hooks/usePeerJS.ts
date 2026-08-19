@@ -160,11 +160,6 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
 
     participantsRef.current.forEach((participant) => {
       if (participant.isMe || !participant.peerId) return;
-
-      if (!forceReconnect && !participant.isScreenShare && peer.id < participant.peerId) {
-        return;
-      }
-      
       callParticipant(peer, participant.peerId, participant.id, stream, forceReconnect);
     });
   }, [callParticipant]);
@@ -435,10 +430,6 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
         });
       }
       
-      const existingCall = callsRef.current[call.peer];
-      if (existingCall) {
-        existingCall.close();
-      }
       callsRef.current[call.peer] = call;
     });
     };
