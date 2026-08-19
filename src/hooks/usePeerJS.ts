@@ -481,6 +481,9 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
           peerId: id
         });
         
+        // Also map our local screen stream into the store so we can see it ourselves!
+        useMeetingStore.getState().setRemoteStream(attendeeId + '_screen', screenStream);
+        
         const participants = useMeetingStore.getState().participants;
         participants.forEach(p => {
            if (p.isMe || p.isScreenShare || !p.peerId) return;
