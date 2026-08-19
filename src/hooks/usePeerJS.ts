@@ -378,7 +378,7 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
       };
 
       useMeetingStore.setState({
-        sendWebSocketEvent: (payload: any) => {
+        sendWebSocketEvent: (payload: Record<string, unknown>) => {
           console.log('sendWebSocketEvent called with:', payload, 'ReadyState:', metadataWs.readyState);
           if (metadataWs.readyState === WebSocket.OPEN) {
             metadataWs.send(JSON.stringify(payload));

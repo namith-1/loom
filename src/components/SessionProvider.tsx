@@ -16,8 +16,12 @@ export default function SessionProvider({ children }: { children: React.ReactNod
     // modern browsers (Safari, Brave, Chrome Incognito) block third-party cookies.
     // If we rely on /api/auth/me to validate the session, it will fail and wipe
     // the user's local state, trapping them in an infinite login loop.
-    // Zustand's persisted state is sufficient for our pseudo-authentication.
-    setIsChecking(false);
+  useEffect(() => {
+    // Avoid synchronous setState in effect, wrap in microtask or timeout
+    const timer = setTimeout(() => {
+      setIsChecking(false);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Don't render children until we've at least checked the session

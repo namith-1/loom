@@ -56,7 +56,7 @@ interface MeetingState {
   setIsCurrentUserHost: (isHost: boolean) => void;
   setLocalStream: (stream: MediaStream | null) => void;
   setRemoteStream: (attendeeId: string, stream: MediaStream) => void;
-  sendWebSocketEvent: (payload: any) => void;
+  sendWebSocketEvent: (payload: Record<string, unknown>) => void;
   toggleHand: () => void;
   sendReaction: (emoji: string) => void;
 }
