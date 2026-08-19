@@ -428,7 +428,13 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
       const metadata = call.metadata as CallMetadata | undefined;
       const callerAttendeeId = metadata?.fromAttendeeId;
 
-      call.answer(getCallableStream(localStreamRef.current));
+      // Do not send our real camera feed to screen share dummy participants.
+      // This saves bandwidth and prevents WebRTC encoder exhaustion which causes black screens.
+      if (callerAttendeeId?.endsWith('_screen')) {
+        call.answer(getCallableStream(null));
+      } else {
+        call.answer(getCallableStream(localStreamRef.current));
+      }
 
       const attendeeIdForStream = callerAttendeeId
         ?? useMeetingStore.getState().participants.find((participant) => participant.peerId === call.peer)?.id;
@@ -480,10 +486,8 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
   const screenCallsRef = useRef<Record<string, MediaConnection>>({});
 
   useEffect(() => {
-    if (!screenStream || !enabled) {
-      if (screenPeerRef.current) {
-        screenPeerRef.current.destroy();
-        screenPeerRef.current = null;
+    if (!screenStream || !enabled || !peerRef.current) {
+      if (Object.keys(screenCallsRef.current).length > 0) {
         Object.values(screenCallsRef.current).forEach(c => c.close());
         screenCallsRef.current = {};
         
@@ -494,53 +498,27 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
       return;
     }
 
-    let mounted = true;
-    const initScreenPeer = async () => {
-      let iceServersArray = undefined;
-      try {
-        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-        const wsHost = process.env.NEXT_PUBLIC_WS_URL || `${protocol}//${window.location.hostname}:8000`;
-        const httpHost = wsHost.replace('ws:', 'http:').replace('wss:', 'https:');
-        const response = await fetch(`${httpHost}/api/rtc/turn-credentials`);
-        if (response.ok) iceServersArray = await response.json();
-      } catch (e) {}
+    const mainPeer = peerRef.current;
+    if (!mainPeer || mainPeer.destroyed) return;
 
-      if (!mounted) return;
-      const peerOptions = iceServersArray ? { config: { iceServers: iceServersArray, iceTransportPolicy: 'relay' as const }, debug: 2 } : undefined;
-      const screenPeer = peerOptions ? new Peer(peerOptions) : new Peer();
-      screenPeerRef.current = screenPeer;
-
-      screenPeer.on('open', (id) => {
-        if (!mounted) return;
-        useMeetingStore.getState().sendWebSocketEvent({
-          event: 'START_SCREEN_SHARE',
-          peerId: id
-        });
-        
-        // Also map our local screen stream into the store so we can see it ourselves!
-        useMeetingStore.getState().setRemoteStream(attendeeId + '_screen', screenStream);
-        
-        const participants = useMeetingStore.getState().participants;
-        participants.forEach(p => {
-           if (p.isMe || p.isScreenShare || !p.peerId) return;
-           const call = screenPeer.call(p.peerId, screenStream, {
-             metadata: { fromAttendeeId: attendeeId + '_screen' }
-           });
-           screenCallsRef.current[p.id] = call;
-        });
-      });
-
-      screenPeer.on('call', (call) => {
-        call.answer(screenStream);
-        screenCallsRef.current[call.peer] = call;
-      });
-    };
-    initScreenPeer();
+    useMeetingStore.getState().sendWebSocketEvent({
+      event: 'START_SCREEN_SHARE',
+      peerId: mainPeer.id
+    });
+    
+    // Also map our local screen stream into the store so we can see it ourselves!
+    useMeetingStore.getState().setRemoteStream(attendeeId + '_screen', screenStream);
+    
+    const participants = useMeetingStore.getState().participants;
+    participants.forEach(p => {
+       if (p.isMe || p.isScreenShare || !p.peerId) return;
+       const call = mainPeer.call(p.peerId, screenStream, {
+         metadata: { fromAttendeeId: attendeeId + '_screen' }
+       });
+       screenCallsRef.current[p.id] = call;
+    });
 
     return () => {
-      mounted = false;
-      screenPeerRef.current?.destroy();
-      screenPeerRef.current = null;
       Object.values(screenCallsRef.current).forEach(c => c.close());
       screenCallsRef.current = {};
       useMeetingStore.getState().sendWebSocketEvent({
