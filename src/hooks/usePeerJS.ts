@@ -156,6 +156,13 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
 
     participantsRef.current.forEach((participant) => {
       if (participant.isMe || !participant.peerId) return;
+      
+      // Break symmetry for initial connection to avoid dual-call race conditions.
+      // Only one peer initiates the call. The other answers it.
+      if (!forceReconnect && !participant.isScreenShare && peer.id < participant.peerId) {
+        return;
+      }
+
       callParticipant(peer, participant.peerId, participant.id, stream, forceReconnect);
     });
   }, [callParticipant]);
@@ -373,16 +380,28 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
           callKnownParticipants(localStreamRef.current, false);
         }
 
-        if (message.event === 'USER_JOINED' && typeof message.attendee_id === 'string' && message.attendee_id !== attendeeId && message.peerId) {
-          callParticipant(peer, message.peerId, message.attendee_id, localStreamRef.current, false);
+        // USER_JOINED is handled by the attendees block below.
+      };
+
+      const messageQueue: Record<string, unknown>[] = [];
+      
+      metadataWs.onopen = () => {
+        console.log('WebSocket connected');
+        while (messageQueue.length > 0) {
+          const msg = messageQueue.shift();
+          if (msg) metadataWs.send(JSON.stringify(msg));
         }
       };
+
+      // ...
 
       useMeetingStore.setState({
         sendWebSocketEvent: (payload: Record<string, unknown>) => {
           console.log('sendWebSocketEvent called with:', payload, 'ReadyState:', metadataWs.readyState);
           if (metadataWs.readyState === WebSocket.OPEN) {
             metadataWs.send(JSON.stringify(payload));
+          } else if (metadataWs.readyState === WebSocket.CONNECTING) {
+            messageQueue.push(payload);
           }
         }
       });
