@@ -42,12 +42,16 @@ const getCallableStream = (stream: MediaStream | null) => {
     const dummyVideo = canvas.captureStream().getVideoTracks()[0];
     dummyVideo.enabled = false;
 
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const dest = ctx.createMediaStreamDestination();
-    const dummyAudio = dest.stream.getAudioTracks()[0];
-    dummyAudio.enabled = false;
-
-    return new MediaStream([dummyVideo, dummyAudio]);
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const dest = ctx.createMediaStreamDestination();
+      const dummyAudio = dest.stream.getAudioTracks()[0];
+      dummyAudio.enabled = false;
+      return new MediaStream([dummyVideo, dummyAudio]);
+    } catch {
+      // If AudioContext fails (e.g. autoplay policy), just return video
+      return new MediaStream([dummyVideo]);
+    }
   } catch (e) {
     return new MediaStream();
   }
@@ -156,13 +160,11 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
 
     participantsRef.current.forEach((participant) => {
       if (participant.isMe || !participant.peerId) return;
-      
-      // Break symmetry for initial connection to avoid dual-call race conditions.
-      // Only one peer initiates the call. The other answers it.
+
       if (!forceReconnect && !participant.isScreenShare && peer.id < participant.peerId) {
         return;
       }
-
+      
       callParticipant(peer, participant.peerId, participant.id, stream, forceReconnect);
     });
   }, [callParticipant]);
@@ -380,7 +382,9 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
           callKnownParticipants(localStreamRef.current, false);
         }
 
-        // USER_JOINED is handled by the attendees block below.
+        if (message.event === 'USER_JOINED' && typeof message.attendee_id === 'string' && message.attendee_id !== attendeeId && message.peerId) {
+          callParticipant(peer, message.peerId, message.attendee_id, localStreamRef.current, false);
+        }
       };
 
       const messageQueue: Record<string, unknown>[] = [];
@@ -424,13 +428,18 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
           const caller = useMeetingStore.getState().participants.find((participant) => participant.peerId === call.peer);
           if (caller) {
             markRemoteMediaAvailable(caller.id, remoteStream);
-            setRemoteStream(caller.id, remoteStream);
+            useMeetingStore.getState().setRemoteStream(caller.id, remoteStream);
           } else {
             console.error('Could not find caller by peer ID:', call.peer);
           }
         });
-        callsRef.current[call.peer] = call;
       }
+      
+      const existingCall = callsRef.current[call.peer];
+      if (existingCall) {
+        existingCall.close();
+      }
+      callsRef.current[call.peer] = call;
     });
     };
     initPeer();

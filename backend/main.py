@@ -740,12 +740,29 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
                 room.attendees.pop(f"{attendee_id}_screen", None)
 
                 if room.host_id == user_id:
-                    if room.attendees:
-                        new_host_id = next(iter(room.attendees.keys()))
-                        room.attendees[new_host_id].is_host = True
-                        room.host_id = room.attendees[new_host_id].user_id
-                    else:
-                        active_sessions.pop(meeting_id, None)
+                    # Host disconnected. Wait 10 seconds before reassigning.
+                    import asyncio
+                    async def reassign_host_after_delay(m_id: str, old_u_id: str):
+                        await asyncio.sleep(10)
+                        async with room_lock:
+                            if m_id in active_sessions:
+                                r = active_sessions[m_id]
+                                # If they haven't reclaimed it
+                                if r.host_id == old_u_id:
+                                    if r.attendees:
+                                        # Only reassign if they are truly not in the room
+                                        if not any(a.user_id == old_u_id for a in r.attendees.values()):
+                                            new_host_id = next(iter(r.attendees.keys()))
+                                            r.attendees[new_host_id].is_host = True
+                                            r.host_id = r.attendees[new_host_id].user_id
+                                            await manager.broadcast(m_id, {
+                                                "event": "STATE_SYNC",
+                                                "original_host_id": r.original_host_id,
+                                                "attendees": {k: v.dict() for k, v in r.attendees.items()}
+                                            })
+                                    else:
+                                        active_sessions.pop(m_id, None)
+                    asyncio.create_task(reassign_host_after_delay(meeting_id, user_id))
 
         await manager.broadcast(meeting_id, {
             "event": "PARTICIPANT_LEFT",
