@@ -737,6 +737,7 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
             if meeting_id in active_sessions:
                 room = active_sessions[meeting_id]
                 room.attendees.pop(attendee_id, None)
+                room.attendees.pop(f"{attendee_id}_screen", None)
 
                 if room.host_id == user_id:
                     if room.attendees:
