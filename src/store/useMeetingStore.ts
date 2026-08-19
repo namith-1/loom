@@ -15,6 +15,7 @@ export type Participant = {
   stream?: MediaStream;
   handRaised: boolean;
   reaction?: string;
+  isScreenShare?: boolean;
 };
 
 // Colors for random assignment when participants join
@@ -38,6 +39,9 @@ interface MeetingState {
   
   originalHostId: string | null;
   setOriginalHostId: (id: string | null) => void;
+  
+  screenStream: MediaStream | null;
+  setScreenStream: (stream: MediaStream | null) => void;
   
   // Actions
   setParticipants: (participants: Participant[]) => void;
@@ -68,10 +72,12 @@ export const useMeetingStore = create<MeetingState>((set) => ({
   isCurrentUserHost: false,
   localStream: null,
   remoteStreams: {},
-
   originalHostId: null,
-  setOriginalHostId: (id: string | null) => set({ originalHostId: id }),
+  screenStream: null,
 
+  setOriginalHostId: (id) => set({ originalHostId: id }),
+  setScreenStream: (stream) => set({ screenStream: stream }),
+  
   setParticipants: (participants) => set({ participants }),
   setViewMode: (mode) => set({ viewMode: mode, activePopover: null }),
   setRightPanel: (panel) => set({ rightPanel: panel }),

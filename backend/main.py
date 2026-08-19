@@ -141,6 +141,7 @@ class AttendeeState(BaseModel):
     peer_id: Optional[str] = None
     hand_raised: bool = False
     reaction: Optional[str] = None
+    is_screen_share: bool = False
 
 class MeetingRoom(BaseModel):
     meeting_id: str
@@ -185,13 +186,14 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-METERED_DOMAIN = os.getenv("METERED_DOMAIN", "zoom_clone_test.metered.live")
+METERED_DOMAIN = os.getenv("METERED_DOMAIN", "izumi-video-meetings.metered.live")
 METERED_API_KEY = os.getenv("METERED_API_KEY", "a4939978ba55449ff19662a9fce1a0eb6501")
 
 @app.get("/api/rtc/turn-credentials")
 async def get_turn_credentials():
     """
     Fetches the pre-formatted ICE Servers array directly from Metered.ca.
+    Add your dependency injection here (e.g., Depends(require_auth)) to secure it.
     """
     url = f"https://{METERED_DOMAIN}/api/v1/turn/credentials?apiKey={METERED_API_KEY}"
     
@@ -586,6 +588,40 @@ async def meeting_websocket(websocket: WebSocket, meeting_id: str, attendee_id: 
                             if "camera_on" in message: sender.camera_on = message["camera_on"]
                             if "screen_sharing" in message: sender.screen_sharing = message["screen_sharing"]
                             
+                await manager.broadcast(meeting_id, {
+                    "event": "STATE_SYNC",
+                    "original_host_id": room.original_host_id if room else None,
+                    "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
+                })
+
+            elif event_type == "START_SCREEN_SHARE":
+                async with room_lock:
+                    room = active_sessions.get(meeting_id)
+                    if room:
+                        sender = room.attendees.get(attendee_id)
+                        if sender:
+                            screen_id = f"{attendee_id}_screen"
+                            room.attendees[screen_id] = AttendeeState(
+                                attendee_id=screen_id,
+                                user_id=sender.user_id,
+                                display_name=f"{sender.display_name}'s Screen",
+                                is_screen_share=True,
+                                camera_on=True, # Ensure video shows up
+                                peer_id=message.get("peerId")
+                            )
+                await manager.broadcast(meeting_id, {
+                    "event": "STATE_SYNC",
+                    "original_host_id": room.original_host_id if room else None,
+                    "attendees": {k: v.dict() for k, v in active_sessions[meeting_id].attendees.items()}
+                })
+
+            elif event_type == "STOP_SCREEN_SHARE":
+                async with room_lock:
+                    room = active_sessions.get(meeting_id)
+                    if room:
+                        screen_id = f"{attendee_id}_screen"
+                        if screen_id in room.attendees:
+                            del room.attendees[screen_id]
                 await manager.broadcast(meeting_id, {
                     "event": "STATE_SYNC",
                     "original_host_id": room.original_host_id if room else None,

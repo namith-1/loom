@@ -361,7 +361,8 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
               isSpotlighted: existingParticipant?.isSpotlighted ?? false,
               peerId: attendee.peer_id || undefined,
               handRaised: attendee.hand_raised || false,
-              reaction: attendee.reaction || undefined
+              reaction: attendee.reaction || undefined,
+              isScreenShare: attendee.is_screen_share || false
             });
           }
 
@@ -435,4 +436,76 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
     registerCall,
     markRemoteMediaAvailable
   ]);
+
+  // Screen Share Peer Logic
+  const screenStream = useMeetingStore(state => state.screenStream);
+  const screenPeerRef = useRef<Peer | null>(null);
+  const screenCallsRef = useRef<Record<string, MediaConnection>>({});
+
+  useEffect(() => {
+    if (!screenStream || !enabled) {
+      if (screenPeerRef.current) {
+        screenPeerRef.current.destroy();
+        screenPeerRef.current = null;
+        Object.values(screenCallsRef.current).forEach(c => c.close());
+        screenCallsRef.current = {};
+        
+        useMeetingStore.getState().sendWebSocketEvent({
+          event: "STOP_SCREEN_SHARE"
+        });
+      }
+      return;
+    }
+
+    let mounted = true;
+    const initScreenPeer = async () => {
+      let iceServersArray = undefined;
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        const wsHost = process.env.NEXT_PUBLIC_WS_URL || `${protocol}//${window.location.hostname}:8000`;
+        const httpHost = wsHost.replace('ws:', 'http:').replace('wss:', 'https:');
+        const response = await fetch(`${httpHost}/api/rtc/turn-credentials`);
+        if (response.ok) iceServersArray = await response.json();
+      } catch (e) {}
+
+      if (!mounted) return;
+      const peerOptions = iceServersArray ? { config: { iceServers: iceServersArray, iceTransportPolicy: 'relay' as const }, debug: 2 } : undefined;
+      const screenPeer = peerOptions ? new Peer(peerOptions) : new Peer();
+      screenPeerRef.current = screenPeer;
+
+      screenPeer.on('open', (id) => {
+        if (!mounted) return;
+        useMeetingStore.getState().sendWebSocketEvent({
+          event: 'START_SCREEN_SHARE',
+          peerId: id
+        });
+        
+        const participants = useMeetingStore.getState().participants;
+        participants.forEach(p => {
+           if (p.isMe || p.isScreenShare || !p.peerId) return;
+           const call = screenPeer.call(p.peerId, screenStream, {
+             metadata: { fromAttendeeId: attendeeId + '_screen' }
+           });
+           screenCallsRef.current[p.id] = call;
+        });
+      });
+
+      screenPeer.on('call', (call) => {
+        call.answer(screenStream);
+        screenCallsRef.current[call.peer] = call;
+      });
+    };
+    initScreenPeer();
+
+    return () => {
+      mounted = false;
+      screenPeerRef.current?.destroy();
+      screenPeerRef.current = null;
+      Object.values(screenCallsRef.current).forEach(c => c.close());
+      screenCallsRef.current = {};
+      useMeetingStore.getState().sendWebSocketEvent({
+        event: "STOP_SCREEN_SHARE"
+      });
+    };
+  }, [screenStream, enabled, attendeeId]);
 }

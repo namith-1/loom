@@ -15,7 +15,9 @@ export default function BottomControlBar() {
     activePopover, setActivePopover,
     participants,
     isCurrentUserHost,
-    localStream
+    localStream,
+    screenStream,
+    setScreenStream
   } = useMeetingStore();
   
   const [vol, setVol] = React.useState(0);
@@ -124,9 +126,29 @@ export default function BottomControlBar() {
           <span className="text-[10px] font-medium text-gray-400 group-hover:text-gray-300">React</span>
         </button>
 
-        <button className="flex flex-col items-center justify-center w-16 h-14 hover:bg-gray-800 rounded-lg group">
-          <ArrowUpSquare className="w-5 h-5 text-green-500 mb-1" />
-          <span className="text-[10px] font-medium text-green-500">Share</span>
+        <button 
+          onClick={async () => {
+            if (screenStream) {
+              screenStream.getTracks().forEach(track => track.stop());
+              setScreenStream(null);
+            } else {
+              try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                stream.getVideoTracks()[0].onended = () => {
+                  setScreenStream(null);
+                };
+                setScreenStream(stream);
+              } catch (e) {
+                console.error("Failed to share screen", e);
+              }
+            }
+          }}
+          className="flex flex-col items-center justify-center w-16 h-14 hover:bg-gray-800 rounded-lg group"
+        >
+          <ArrowUpSquare className={cn("w-5 h-5 mb-1", screenStream ? "text-red-500" : "text-green-500")} />
+          <span className={cn("text-[10px] font-medium", screenStream ? "text-red-500" : "text-green-500")}>
+            {screenStream ? 'Stop Share' : 'Share'}
+          </span>
         </button>
 
         <button className="flex flex-col items-center justify-center w-16 h-14 hover:bg-gray-800 rounded-lg group">
