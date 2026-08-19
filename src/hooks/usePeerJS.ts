@@ -11,6 +11,7 @@ type AttendeeMessage = {
   peer_id?: string | null;
   hand_raised?: boolean;
   reaction?: string | null;
+  is_screen_share?: boolean;
 };
 
 type MeetingMessage = {
