@@ -241,8 +241,25 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
     if (!enabled) return;
 
     let mounted = true;
-    const peer = new Peer();
-    peerRef.current = peer;
+    const initPeer = async () => {
+      let iceServersArray = undefined;
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+        const wsHost = process.env.NEXT_PUBLIC_WS_URL || `${protocol}//${window.location.hostname}:8000`;
+        const httpHost = wsHost.replace('ws:', 'http:').replace('wss:', 'https:');
+        const response = await fetch(`${httpHost}/api/rtc/turn-credentials`);
+        if (response.ok) {
+          iceServersArray = await response.json();
+        }
+      } catch (e) {
+        console.error("Failed to fetch ICE servers", e);
+      }
+      
+      if (!mounted) return;
+
+      const peerOptions = iceServersArray ? { config: { iceServers: iceServersArray, iceTransportPolicy: 'relay' }, debug: 2 } : undefined;
+      const peer = peerOptions ? new Peer(peerOptions) : new Peer();
+      peerRef.current = peer;
 
     peer.on('open', (id) => {
       if (!mounted) return;
@@ -394,10 +411,12 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
         callsRef.current[call.peer] = call;
       }
     });
+    };
+    initPeer();
 
     return () => {
       mounted = false;
-      peer.destroy();
+      peerRef.current?.destroy();
       metadataWsRef.current?.close();
       Object.values(callsRef.current).forEach((call) => call.close());
       callsRef.current = {};

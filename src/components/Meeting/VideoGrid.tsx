@@ -76,7 +76,7 @@ const ParticipantCard = ({
           autoPlay 
           playsInline 
           muted={participant.isMe} // Mute local playback to avoid echo
-          className={cn("w-full h-full object-cover", participant.isMe && "scale-x-[-1]")}
+          className={cn("w-full h-full object-contain bg-black", participant.isMe && "scale-x-[-1]")}
         />
       ) : (
         /* Fallback avatar if video is off */

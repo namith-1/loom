@@ -10,6 +10,8 @@ import uuid
 import sqlite3
 from datetime import datetime
 import contextlib
+import httpx
+import os
 
 DB_FILE = "database.db"
 
@@ -122,6 +124,7 @@ if frontend_url:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -181,6 +184,30 @@ class ConnectionManager:
                 pass
 
 manager = ConnectionManager()
+
+METERED_DOMAIN = os.getenv("METERED_DOMAIN", "zoom_clone_test.metered.live")
+METERED_API_KEY = os.getenv("METERED_API_KEY", "a4939978ba55449ff19662a9fce1a0eb6501")
+
+@app.get("/api/rtc/turn-credentials")
+async def get_turn_credentials():
+    """
+    Fetches the pre-formatted ICE Servers array directly from Metered.ca.
+    """
+    url = f"https://{METERED_DOMAIN}/api/v1/turn/credentials?apiKey={METERED_API_KEY}"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            
+            return response.json() 
+            
+        except httpx.HTTPError as e:
+            print(f"Error fetching TURN credentials: {e}")
+            raise HTTPException(
+                status_code=500, 
+                detail="Could not generate video routing credentials"
+            )
 
 class CreateMeetingRequest(BaseModel):
     title: str
@@ -258,8 +285,11 @@ async def join_meeting(data: JoinMeetingRequest, response: Response, request: Re
         if data.meeting_id not in active_sessions:
             with get_db() as db:
                 row = db.execute("SELECT * FROM meetings WHERE meeting_id = ?", (data.meeting_id,)).fetchone()
+                if row and row["host_id"] != data.user_id:
+                    raise HTTPException(status_code=403, detail="Meeting is over")
             if not row:
                 raise HTTPException(status_code=404, detail="Meeting does not exist")
+           
             active_sessions[data.meeting_id] = MeetingRoom(
                 meeting_id=data.meeting_id,
                 passcode=row['passcode'],
