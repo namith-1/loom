@@ -186,31 +186,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-METERED_DOMAIN = os.getenv("METERED_DOMAIN", "izumi-video-meetings.metered.live")
-METERED_API_KEY = os.getenv("METERED_API_KEY", "a4939978ba55449ff19662a9fce1a0eb6501")
-
-@app.get("/api/rtc/turn-credentials")
-async def get_turn_credentials():
-    """
-    Fetches the pre-formatted ICE Servers array directly from Metered.ca.
-    Add your dependency injection here (e.g., Depends(require_auth)) to secure it.
-    """
-    url = f"https://{METERED_DOMAIN}/api/v1/turn/credentials?apiKey={METERED_API_KEY}"
-    
-    # Metered domains with underscores cause SSL Hostname mismatch errors in OpenSSL.
-    async with httpx.AsyncClient(verify=False) as client:
-        try:
-            response = await client.get(url)
-            response.raise_for_status()
-            
-            return response.json() 
-            
-        except httpx.HTTPError as e:
-            print(f"Error fetching TURN credentials: {e}")
-            raise HTTPException(
-                status_code=500, 
-                detail="Could not generate video routing credentials"
-            )
 
 class CreateMeetingRequest(BaseModel):
     title: str

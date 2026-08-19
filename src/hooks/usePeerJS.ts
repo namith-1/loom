@@ -266,24 +266,11 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
 
     let mounted = true;
     const initPeer = async () => {
-      let iceServersArray = undefined;
-      try {
-        const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-        const wsHost = process.env.NEXT_PUBLIC_WS_URL || `${protocol}//${window.location.hostname}:8000`;
-        const httpHost = wsHost.replace('ws:', 'http:').replace('wss:', 'https:');
-        const response = await fetch(`${httpHost}/api/rtc/turn-credentials`);
-        if (response.ok) {
-          iceServersArray = await response.json();
-        }
-      } catch (e) {
-        console.error("Failed to fetch ICE servers", e);
-      }
-      
       if (!mounted) return;
-      // Allow 'all' transport policies so local devices can connect via P2P for free,
-      // saving the TURN server bandwidth strictly for strict firewalls.
-      const peerOptions = iceServersArray ? { config: { iceServers: iceServersArray, iceTransportPolicy: 'all' as const }, debug: 2 } : undefined;
-      const peer = peerOptions ? new Peer(peerOptions) : new Peer();
+      
+      // Use default PeerJS STUN servers (no relay), as requested to avoid TURN limits
+      const peerOptions = { debug: 2 };
+      const peer = new Peer(peerOptions);
       peerRef.current = peer;
 
     peer.on('open', (id) => {
