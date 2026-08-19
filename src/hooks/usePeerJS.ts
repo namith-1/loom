@@ -160,6 +160,11 @@ export function usePeerJS(meetingId: string, attendeeId: string, displayName: st
 
     participantsRef.current.forEach((participant) => {
       if (participant.isMe || !participant.peerId) return;
+      
+      // Never initiate calls to screen share dummy participants.
+      // They are responsible for calling us explicitly when they are created.
+      if (participant.isScreenShare) return;
+
       callParticipant(peer, participant.peerId, participant.id, stream, forceReconnect);
     });
   }, [callParticipant]);
